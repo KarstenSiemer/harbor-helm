@@ -45,15 +45,12 @@ spec:
         - name: NOTARY_SIGNER_DEFAULTALIAS
           value: defaultalias
         volumeMounts:
-        - name: config
-          mountPath: /etc/notary/signer-config.postgres.json
-          subPath: signer.json
-        - name: signer-certificate
-          mountPath: /etc/ssl/notary/tls.crt
-          subPath: tls.crt
-        - name: signer-certificate
-          mountPath: /etc/ssl/notary/tls.key
-          subPath: tls.key
+        - name: notary-config
+          mountPath: /etc/notary
+        {{- if .Values.notary.secretName }}
+        - name: notary-cert
+          mountPath: /etc/ssl/notary/cert/
+        {{- end }}
       volumes:
       - name: config
         secret:
@@ -62,9 +59,15 @@ spec:
         secret:
           {{- if .Values.notary.secretName }}
           secretName: {{ .Values.notary.secretName }}
-          {{- else }}
-          secretName: {{ template "harbor.notary-server" . }}
-          {{- end }}
+          defaultMode: 0444
+          items:
+          - key: ca.crt
+            path: notary-signer-ca.crt
+          - key: tls.crt
+            path: notary-signer.crt
+          - key: tls.key
+            path: notary-signer.key
+      {{- end }}
     {{- with .Values.notary.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

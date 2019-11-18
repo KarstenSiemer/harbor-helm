@@ -53,9 +53,10 @@ spec:
         - name: token-service-certificate
           mountPath: /root.crt
           subPath: tls.crt
-        - name: signer-certificate
-          mountPath: /etc/ssl/notary/ca.crt
-          subPath: ca.crt
+        {{- if .Values.notary.secretName }}
+        - name: notary-ca
+          mountPath: /etc/ssl/notary/cert/
+        {{- end }}
       volumes:
       - name: config
         secret:
@@ -71,9 +72,11 @@ spec:
         secret:
           {{- if .Values.notary.secretName }}
           secretName: {{ .Values.notary.secretName }}
-          {{- else }}
-          secretName: {{ template "harbor.notary-server" . }}
-          {{- end }}
+          defaultMode: 0444
+          items:
+          - key: ca.crt
+            path: notary-signer-ca.crt
+      {{- end }}
     {{- with .Values.notary.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
